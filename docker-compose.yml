@@ -1,0 +1,64 @@
+version: "3.9"
+
+networks:
+  default:
+    name: weather-net
+    driver: bridge
+
+services:
+  nats:
+    image: nats:2.11
+    command: ["-js", "-sd", "/data", "-p", "4222", "-m", "8222"]
+    ports: ["4222:4222", "8222:8222"]
+    volumes:
+      - nats-data:/data
+
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_PASSWORD: password
+      POSTGRES_USER: app
+    ports: ["5432:5432"]
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    ports: ["6379:6379"]
+
+  weather-backend:
+    image: ruby:3.4.5
+    working_dir: /app
+    depends_on: [postgres, nats, redis]
+    environment:
+      DATABASE_URL: postgres://app:password@postgres:5432/weather_backend_development
+      RAILS_ENV: development
+      NATS_URI: nats://nats:4222
+      REDIS_URL: redis://redis:6379/0
+      WEATHER_CITIES: "Moscow;Saint Petersburg"
+      TZ: Europe/Moscow
+    command: ["bash", "-lc",
+              "bundle install && bin/rails db:prepare && bin/rails db:migrate && bundle exec sidekiq -C config/sidekiq.yml"]
+    volumes:
+      - ./weather-backend:/app
+
+  weather-frontend:
+    image: ruby:3.4.5
+    working_dir: /app
+    depends_on: [postgres, nats, redis]
+    environment:
+      DATABASE_URL: postgres://app:password@postgres:5432/weather_frontend_development
+      RAILS_ENV: development
+      NATS_URI: nats://nats:4222
+      REDIS_URL: redis://redis:6379/1
+      TZ: Europe/Moscow
+    ports: ["3000:3000"]
+    command: ["bash", "-lc",
+              "bundle install && bin/rails db:prepare && bin/rails db:migrate && bin/rails assets:precompile && bin/rails s -b 0.0.0.0 -p 3000"]
+    volumes:
+      - ./weather-frontend:/app
+
+volumes:
+  nats-data:
+  pg-data:
+

@@ -1,0 +1,4 @@
+<%= turbo_stream_from :weather %>
+<%= turbo_frame_tag :weather do %>
+  <%= render partial: 'weather', locals: { weather: Array.wrap(Rails.cache.read('weather')) } %>
+<% end %>

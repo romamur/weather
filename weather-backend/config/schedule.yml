@@ -1,0 +1,4 @@
+fetch_weather:
+  cron: every 20 minutes
+  class: FetchWeatherJob
+  queue: default
