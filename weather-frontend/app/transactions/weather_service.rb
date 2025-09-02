@@ -13,7 +13,7 @@ class WeatherService
     psub = js.pull_subscribe("WEATHER", "WEATHER")
 
     loop do
-      messages = psub.fetch(20)
+      messages = psub.fetch(1)
       messages.each do |msg|
         weather << JSON.parse(msg.data)
         msg.ack

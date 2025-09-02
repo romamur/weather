@@ -38,7 +38,7 @@ services:
       WEATHER_CITIES: "Moscow;Saint Petersburg"
       TZ: Europe/Moscow
     command: ["bash", "-lc",
-              "bundle install && bin/rails db:prepare && bin/rails db:migrate && bundle exec sidekiq -C config/sidekiq.yml"]
+              "bundle install && bundle exec rails db:prepare && bundle exec rails db:migrate && bundle exec sidekiq -C config/sidekiq.yml"]
     volumes:
       - ./weather-backend:/app
 
@@ -54,7 +54,7 @@ services:
       TZ: Europe/Moscow
     ports: ["3000:3000"]
     command: ["bash", "-lc",
-              "bundle install && bin/rails db:prepare && bin/rails db:migrate && bin/rails assets:precompile && bin/rails s -b 0.0.0.0 -p 3000"]
+              "bundle install && bundle exec rails db:prepare && bundle exec rails db:migrate && bundle exec rails assets:precompile && bundle exec rails s -b 0.0.0.0 -p 3000"]
     volumes:
       - ./weather-frontend:/app
 
