@@ -13,7 +13,7 @@ class WeatherService
     psub = js.pull_subscribe("WEATHER", "WEATHER")
 
     loop do
-      messages = psub.fetch(1)
+      messages = psub.fetch(20)
       messages.each do |msg|
         weather << JSON.parse(msg.data)
         msg.ack
@@ -22,9 +22,13 @@ class WeatherService
       next if weather.empty?
 
       prev_weather = Rails.cache.read('weather') || []
-      Rails.cache.write('weather', weather + prev_weather, expires_in: 1.day)
-      Turbo::StreamsChannel.broadcast_prepend_to(
-        :weather, partial: 'weathers/weather', locals: { weather: }, target: :weather)
+      current_weather = weather + prev_weather
+      current_weather.sort_by! { |h| h['ts'] }
+      current_weather.reverse!
+      current_weather.uniq! { |h| "#{h['ts']}#{h['name']}" }
+      Rails.cache.write('weather', current_weather, expires_in: 1.day)
+      Turbo::StreamsChannel.broadcast_update_to(
+        :weather, partial: 'weathers/weather', locals: { weather: current_weather }, target: :weather)
 
       sleep(60)
     end
